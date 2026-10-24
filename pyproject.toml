@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codex-provider-routing"
+version = "0.1.0"
+description = "Custom model provider routing for the Codex App Unix remote daemon"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = ["websockets==15.0.1"]
+readme = "README.md"
+
+[project.optional-dependencies]
+test = ["build", "PyYAML>=6"]
+
+[project.scripts]
+codex-provider-routing = "codex_provider_routing.manage:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

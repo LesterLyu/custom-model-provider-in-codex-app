@@ -1,0 +1,6 @@
+{
+  "routes": {
+    "example-local-model": "local",
+    "example-review-model": "local"
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex App Custom Provider"
+  short_description: "Configure custom models in Codex App on Windows or WSL"
+  default_prompt: "Use $codex-app-custom-provider to fix custom model routing while preserving my OpenAI default."
