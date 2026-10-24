@@ -9,7 +9,7 @@ For `thread/start`, `thread/resume`, and `thread/fork`:
 3. If the exact model ID is mapped, set `params.modelProvider` to the configured provider and make the model explicit. Correct an existing nested `config.model_provider` too.
 4. Preserve all other fields. Pass unmapped traffic through unchanged, including explicit OpenAI model selections.
 
-Model IDs in the map must be unique to the custom provider. Mapping a shared hosted model name would also redirect hosted requests with that name. The installer rejects mapping the effective default model to help preserve the default.
+Model IDs in the map must be unique to the custom provider. Mapping a shared hosted model name would also redirect hosted requests with that name. The Linux/WSL installer rejects mapping the effective default model to help preserve the default. The Windows installer leaves configuration untouched; review the existing default and route map before activating it.
 
 An already loaded thread may ignore a resume provider override. Restarting the app server clears that loaded state; changing only a database field or catalog entry isn't a reliable fix. A model switch inside an already loaded conversation should be checked separately. These routers don't rewrite `turn/start` or invent a provider-switch field for it.
 
