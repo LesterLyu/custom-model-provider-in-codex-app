@@ -31,7 +31,7 @@ class Stdio(unittest.TestCase):
                  patch('sys.argv', ['stdio_router', '--settings', str(settings), '--', '--version']), \
                  patch.object(stdio_router.subprocess, 'call', return_value=0) as call:
                 self.assertEqual(stdio_router.main(), 0)
-            self.assertEqual(call.call_args.kwargs['env'].get('CODEX_HOME'), home)
+            self.assertEqual(Path(call.call_args.kwargs['env']['CODEX_HOME']).resolve(), Path(home).resolve())
 
     def test_explicit_home_override_is_preserved(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -43,5 +43,5 @@ class Stdio(unittest.TestCase):
                  patch('sys.argv', ['stdio_router', '--settings', str(settings), '--', '--version']), \
                  patch.object(stdio_router.subprocess, 'call', return_value=0) as call:
                 self.assertEqual(stdio_router.main(), 0)
-            self.assertEqual(call.call_args.kwargs['env']['CODEX_HOME'], override)
+            self.assertEqual(Path(call.call_args.kwargs['env']['CODEX_HOME']).resolve(), Path(override).resolve())
             self.assertNotIn('CODEX_CLI_PATH', call.call_args.kwargs['env'])
