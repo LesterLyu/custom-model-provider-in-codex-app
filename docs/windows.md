@@ -37,6 +37,8 @@ python .\windows\verify.py --runtime "$env:USERPROFILE\.codex\provider-routing-w
 
 The native executable must be the real `codex.exe`, not this project's wrapper. If `Get-Command` selects another installation, pass the correct absolute path explicitly. Installation refuses to overwrite an existing runtime directory.
 
+For a non-default Codex directory, pass `-CodexHome 'C:\path\to\codex-home'`. The wrapper uses that directory for both routing metadata and native CLI configuration; an explicit `CODEX_HOME` in the launching environment takes precedence over the saved setting.
+
 The verification starts two isolated stdio app servers, checks custom-model start/resume and the OpenAI default, and leaves defaults unchanged. It does not perform model inference. After that, activate:
 
 ```powershell
@@ -98,7 +100,7 @@ Finish active work, fully exit the App, then run:
 .\windows\rollback.ps1
 ```
 
-This restores the previous user `CODEX_CLI_PATH` value and leaves runtime files for inspection. Open a fresh Windows login environment, or relaunch the App from a shell whose `CODEX_CLI_PATH` has been restored. Avoid `start-app.ps1` after rollback because it explicitly enables routing for that launch. No config or chat record is restored/overwritten because the installer never changed those files.
+This restores the previous user `CODEX_CLI_PATH` value, notifies Explorer of the environment change, and leaves runtime files for inspection. Existing App and shell processes still have their earlier environment: relaunch from a refreshed Explorer or a shell whose `CODEX_CLI_PATH` has been restored. Avoid `start-app.ps1` after rollback because it explicitly enables routing for that launch. No config or chat record is restored/overwritten because the installer never changed those files.
 
 ## Troubleshooting / 排错
 

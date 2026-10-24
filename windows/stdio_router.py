@@ -27,9 +27,14 @@ def is_stdio_server(arguments):
     return True
 
 
-def relay(cli, arguments, router):
-    env = dict(os.environ, CODEX_APP_RUNTIME_CLI_PATH=str(cli))
+def native_environment(cli, home):
+    env = dict(os.environ, CODEX_APP_RUNTIME_CLI_PATH=str(cli), CODEX_HOME=str(home))
     env.pop('CODEX_CLI_PATH', None)
+    return env
+
+
+def relay(cli, arguments, router):
+    env = native_environment(cli, router.home)
     child = subprocess.Popen([str(cli), *arguments], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                              stderr=None, bufsize=0, env=env)
 
@@ -88,11 +93,10 @@ def main():
     # The wrapper must always delegate to the real executable, never back to itself.
     if cli.resolve() == Path(settings.get('launcher', '')).resolve():
         parser.error('Native CLI and routing launcher must differ')
+    home = Path(os.environ.get('CODEX_HOME') or settings['home']).expanduser().resolve()
     if not is_stdio_server(arguments):
-        env = dict(os.environ, CODEX_APP_RUNTIME_CLI_PATH=str(cli))
-        env.pop('CODEX_CLI_PATH', None)
+        env = native_environment(cli, home)
         return subprocess.call([str(cli), *arguments], env=env)
-    home = os.environ.get('CODEX_HOME', settings['home'])
     router = Router(home, settings['routes'], settings.get('audit'))
     return relay(cli, arguments, router)
 

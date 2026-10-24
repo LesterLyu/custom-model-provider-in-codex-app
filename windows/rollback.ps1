@@ -6,4 +6,6 @@ $current = [Environment]::GetEnvironmentVariable('CODEX_CLI_PATH', 'User')
 if ($current -ne $settings.launcher) { throw 'The override changed since installation; review it instead of overwriting.' }
 [Environment]::SetEnvironmentVariable('CODEX_CLI_PATH', $settings.previous_override, 'User')
 $env:CODEX_CLI_PATH = $settings.previous_override
+. (Join-Path $PSScriptRoot 'environment.ps1')
+Send-CodexEnvironmentChanged
 Write-Output 'Previous override restored. Fully exit and relaunch Codex App. Runtime retained; no config or sessions changed.'

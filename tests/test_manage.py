@@ -2,14 +2,45 @@ import json
 import os
 from pathlib import Path
 import stat
+import socket
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from codex_provider_routing.manage import load_state, private_json, quote_unit, render_unit
+from codex_provider_routing.manage import load_state, private_json, quote_unit, render_unit, require_routing_service
 from codex_provider_routing.router import Router, remove_socket, validate_routes
 
 
 class Management(unittest.TestCase):
+    def test_inactive_router_cannot_be_reported_healthy(self):
+        with patch('codex_provider_routing.manage.subprocess.check_output',
+                   return_value='ActiveState=failed\nMainPID=0\n'):
+            with self.assertRaisesRegex(RuntimeError, 'not active'):
+                require_routing_service({'alias': '/unused', 'listen': '/unused'})
+
+    def test_native_fallback_cannot_impersonate_active_router(self):
+        with tempfile.TemporaryDirectory(prefix='cr-owner-') as tmp:
+            path = Path(tmp) / 'public.sock'
+            with socket.socket(socket.AF_UNIX) as server:
+                server.bind(str(path))
+                server.listen()
+                output = f'ActiveState=active\nMainPID={os.getpid() + 1}\n'
+                with patch('codex_provider_routing.manage.subprocess.check_output', return_value=output):
+                    with self.assertRaisesRegex(RuntimeError, 'not owned by the routing service'):
+                        require_routing_service({'alias': str(path), 'listen': str(path)})
+
+    def test_live_router_peer_is_accepted(self):
+        with tempfile.TemporaryDirectory(prefix='cr-owner-') as tmp:
+            path = Path(tmp) / 'public.sock'
+            alias = Path(tmp) / 'alias.sock'
+            with socket.socket(socket.AF_UNIX) as server:
+                server.bind(str(path))
+                server.listen()
+                alias.symlink_to(path)
+                output = f'ActiveState=active\nMainPID={os.getpid()}\n'
+                with patch('codex_provider_routing.manage.subprocess.check_output', return_value=output):
+                    require_routing_service({'alias': str(alias), 'listen': str(path)})
+
     def test_systemd_paths_are_quoted(self):
         unit = render_unit('/example home/venv/bin/python', '/example home/100%/state.json')
         self.assertIn('"/example home/venv/bin/python"', unit)

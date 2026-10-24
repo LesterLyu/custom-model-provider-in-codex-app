@@ -97,6 +97,25 @@ def require_idle(alias):
                 raise RuntimeError("A loaded thread is active or needs attention; wait before installing")
 
 
+def require_routing_service(state):
+    """Prove the router owns the public endpoint before proxy can autostart a fallback."""
+    output = subprocess.check_output(
+        ["systemctl", "--user", "show", SERVICE, "-p", "ActiveState", "-p", "MainPID"], text=True)
+    properties = dict(line.split("=", 1) for line in output.splitlines() if "=" in line)
+    pid = int(properties.get("MainPID", "0"))
+    if properties.get("ActiveState") != "active" or pid <= 0:
+        raise RuntimeError("Routing service is not active; inspect its journal before reconnecting")
+    alias = Path(state["alias"])
+    if alias.resolve(strict=True) != Path(state["listen"]).resolve(strict=True):
+        raise RuntimeError("Public socket alias no longer points at the installed routing endpoint")
+    with socket.socket(socket.AF_UNIX) as sock:
+        sock.settimeout(2)
+        sock.connect(str(alias))
+        owner_pid, owner_uid, _ = struct.unpack("3i", sock.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
+    if owner_pid != pid or owner_uid != os.getuid():
+        raise RuntimeError("Public endpoint is not owned by the routing service; a native fallback may be running")
+
+
 def quote_unit(value):
     value = str(value)
     if any(c in value for c in ("\n", "\r", "\0")):
@@ -278,6 +297,7 @@ def main():
             restore_native(state)
             print("Native daemon restored. Unit and private runtime files retained for review; config unchanged.")
         else:
+            require_routing_service(state)
             if args.command == "doctor":
                 print(check_schema(state["codex"]))
             model = getattr(args, "model", None)

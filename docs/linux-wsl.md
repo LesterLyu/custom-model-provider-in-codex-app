@@ -120,7 +120,7 @@ Runtime directory mode is 0700 and generated JSON files are 0600. `native-enviro
 "$HOME/.local/share/codex-provider-routing-venv/bin/codex-provider-routing" verify --model example-local-model
 ```
 
-Replace the example model ID with an installed mapping. `doctor` checks schema and actual proxy connectivity; `verify --model` also creates an ephemeral mapped-provider thread without inference. Neither sends a chat message. Reconnect the App and make a short real request to check generation.
+Replace the example model ID with an installed mapping. Both commands first confirm the service is active and its MainPID owns the public socket, so a native fallback cannot be mistaken for the router. `doctor` then checks schema and actual proxy connectivity; `verify --model` also creates an ephemeral mapped-provider thread without inference. Neither sends a chat message. Reconnect the App and make a short real request to check generation.
 
 After updating the native CLI, disconnect the App, restart the user service, and rerun `doctor`/`verify`. A stable native CLI symlink lets the service use the updated binary after restart. If its path changes, inspect the private installation state and update deliberately. Schema compatibility alone doesn't establish compatibility with future native socket or App changes.
 

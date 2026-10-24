@@ -1,4 +1,5 @@
 """Platform-independent, narrowly scoped JSON-RPC provider routing."""
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -21,7 +22,7 @@ def validate_routes(routes):
 
 class Router:
     def __init__(self, home, routes, audit=None):
-        self.home = Path(home)
+        self.home = Path(home).expanduser().resolve()
         self.audit = audit
         self.routes = validate_routes(routes)
 
@@ -34,7 +35,7 @@ class Router:
             return None
         for path in paths[:1]:
             try:
-                with sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=0.1) as db:
+                with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=0.1)) as db:
                     row = db.execute("SELECT model FROM threads WHERE id = ?", (thread_id,)).fetchone()
                     return row[0] if row else None
             except (OSError, sqlite3.Error):

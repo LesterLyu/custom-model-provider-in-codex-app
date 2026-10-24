@@ -10,16 +10,6 @@ if ($current -ne $settings.previous_override -and $current -ne $settings.launche
 if ($LASTEXITCODE -ne 0) { throw 'Native CLI delegation failed.' }
 [Environment]::SetEnvironmentVariable('CODEX_CLI_PATH', $settings.launcher, 'User')
 $env:CODEX_CLI_PATH = $settings.launcher
-# Notify Explorer so future normal launches can inherit the updated user setting.
-Add-Type -TypeDefinition @'
-using System;
-using System.Runtime.InteropServices;
-public static class CodexEnvironmentNotice {
-    [DllImport("user32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
-    public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint msg, UIntPtr wParam,
-        string lParam, uint flags, uint timeout, out UIntPtr result);
-}
-'@
-$result = [UIntPtr]::Zero
-[CodexEnvironmentNotice]::SendMessageTimeout([IntPtr]0xffff, 0x1a, [UIntPtr]::Zero, 'Environment', 2, 3000, [ref]$result) | Out-Null
+. (Join-Path $PSScriptRoot 'environment.ps1')
+Send-CodexEnvironmentChanged
 Write-Output 'Activated. Fully exit Codex App and launch it with windows/start-app.ps1 once.'
