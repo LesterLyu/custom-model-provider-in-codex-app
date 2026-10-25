@@ -21,9 +21,21 @@ This is a loopback, unauthenticated example. Configure authentication if your en
 
 保持原来的 OpenAI 默认。不要为了显示本地模型，把全局 `model_provider` 改成本地 provider；路由会只处理映射中的模型。模型目录只负责显示和能力描述，不负责修正错误的 provider。
 
+Follow the [model selector guide](model-selector.md) ([中文](model-selector.zh-CN.md)) for a complete metadata example, combined OpenAI/custom catalog, reasoning controls, and refresh steps before installing the router.
+
 ## 2. Install / 安装
 
 Requirements: Python 3.11+, the native Windows Codex CLI used by the App, and the .NET Framework compiler normally present on supported Windows installations. The Windows runtime uses only the Python standard library.
+
+If `codex` isn't on your shell's PATH, start the App and locate the real running app-server executable:
+
+```powershell
+Get-CimInstance Win32_Process -Filter "Name = 'codex.exe'" |
+  Where-Object { $_.CommandLine -match '\bapp-server\b' } |
+  Select-Object -ExpandProperty ExecutablePath -Unique
+```
+
+Use that native path for `-NativeCodex` and catalog export commands. The routing launcher isn't a substitute for this path.
 
 In PowerShell, from the repository root:
 

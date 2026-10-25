@@ -25,6 +25,8 @@ supports_websockets = false
 
 Use the real reachable address and authentication for your environment. Loopback inside WSL may not refer to the Windows host, depending on WSL networking. Check connectivity separately. No provider/profile/catalog is rewritten by this installer.
 
+Follow the [model selector guide](model-selector.md) ([中文](model-selector.zh-CN.md)) inside Linux to build the combined catalog, configure its absolute Linux path, and retain OpenAI selector entries.
+
 ## Install / 安装
 
 Clone this repository and install in a dedicated user virtual environment:

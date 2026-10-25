@@ -15,6 +15,8 @@ Use this skill when a custom model is visible but can't start/resume, the App se
 4. For the ChatGPT-account unsupported-model error, verify the lifecycle request or server result actually selected OpenAI. Don't assume every error with a custom model has this cause.
 5. Preserve the user's default model/provider and approval policy. Never route a hosted model name unless the user intentionally wants all requests with that exact name redirected.
 
+If a model is missing from the selector, read the catalog section in [the platform procedures](references/platforms.md) before adding a routing workaround. A picker entry and an inference route need separate verification.
+
 ## Apply a scoped compatibility layer
 
 Read [the platform procedures](references/platforms.md) for the relevant host. Prefer native supported configuration when it works. If the observed App version omits or misselects `modelProvider`, use the repository's exact model-to-provider mapping on `thread/start`, `thread/resume`, and `thread/fork`.

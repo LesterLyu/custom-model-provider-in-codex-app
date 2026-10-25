@@ -1,0 +1,48 @@
+{
+  "models": [
+    {
+      "slug": "example-local-model",
+      "display_name": "Local · Example model",
+      "description": "Example metadata. Replace the ID and capabilities with values supported by your provider.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {"effort": "low", "description": "Lower reasoning effort"},
+        {"effort": "medium", "description": "Medium reasoning effort"},
+        {"effort": "high", "description": "Higher reasoning effort"}
+      ],
+      "shell_type": "unified_exec",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 100,
+      "additional_speed_tiers": [],
+      "service_tiers": [],
+      "available_access_programs": {"cyber": []},
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "You are a coding assistant. Use the available tools when needed and report results accurately.",
+      "include_skills_usage_instructions": false,
+      "include_plugin_usage_instructions": false,
+      "include_apps_usage_instructions": false,
+      "default_reasoning_summary": "none",
+      "support_verbosity": false,
+      "default_verbosity": "low",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text",
+      "truncation_policy": {"mode": "tokens", "limit": 8192},
+      "supports_image_detail_original": false,
+      "context_window": 32768,
+      "max_context_window": 32768,
+      "comp_hash": "example-metadata-v1",
+      "effective_context_window_percent": 95,
+      "auto_compact_token_limit": 24576,
+      "experimental_supported_tools": [],
+      "input_modalities": ["text"],
+      "supports_search_tool": false,
+      "supports_experimental_context": false,
+      "use_responses_lite": false,
+      "supports_reasoning_effort_updates": true,
+      "node_repl_auto_review_required": true,
+      "node_repl_disabled": false
+    }
+  ]
+}

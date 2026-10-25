@@ -32,6 +32,14 @@ Disconnect idle App clients before maintenance. Unit paths/runtime locations var
 
 ## Provider and catalog references
 
+For selector setup, use https://github.com/LesterLyu/custom-model-provider-in-codex-app/blob/main/docs/model-selector.md (Chinese version: `model-selector.zh-CN.md` in the same directory).
+
+- Preserve the existing hosted definitions when creating a combined local catalog. Use full, version-compatible metadata; a plain ID list isn't enough.
+- Match `slug` to the API model and route key. Check `display_name`, `visibility`, and truthful supported/default reasoning levels.
+- `tools/merge_catalog.py` combines a fresh base with separate custom definitions and backs up an existing output when `--overwrite` is given. It doesn't fetch upstream data or edit config/auth.
+- Set one top-level `model_catalog_json` absolute path on the actual app-server host. Update the installed runtime map as well; editing an installation input file doesn't update existing routing state.
+- Restart and check `model/list`, then a short authorized inference. Keep generated catalogs private. The repository's example capabilities are placeholders, not a guarantee about any model.
+
 - https://learn.chatgpt.com/docs/config-file/config-advanced
 - https://learn.chatgpt.com/docs/model-catalogs
 - https://learn.chatgpt.com/docs/app-server

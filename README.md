@@ -4,7 +4,7 @@ Keep OpenAI as the default while selected custom models use their own provider i
 
 When the App sends a custom model ID without `modelProvider`, the app server can select the default OpenAI provider and report **“The model is not supported when using Codex with a ChatGPT account.”** Registering a provider and adding a model to the catalog are necessary, but do not repair that request. This project supplies a small compatibility router for that case.
 
-[中文说明](README.zh-CN.md) · [Windows setup](docs/windows.md) · [Linux / WSL setup](docs/linux-wsl.md) · [Architecture](docs/architecture.md)
+[中文说明](README.zh-CN.md) · [Model selector](docs/model-selector.md) · [Windows setup](docs/windows.md) · [Linux / WSL setup](docs/linux-wsl.md) · [Architecture](docs/architecture.md)
 
 ## Platforms
 
@@ -17,7 +17,7 @@ This is a community workaround for observed versions, not an official Codex feat
 
 ## Start here
 
-1. Register your custom provider on the computer running the app server and supply compatible model metadata.
+1. Register your custom provider on the computer running the app server and follow the [model selector guide](docs/model-selector.md) to add compatible metadata while retaining the OpenAI entries.
 2. Give custom models distinct IDs and create a model-to-provider map using [the example](examples/routes.example.json). Use real IDs served by your provider; the example names are placeholders.
 3. Follow the **platform-specific** installation and verification instructions linked above.
 4. Reconnect or fully restart the App as described there. Verify the selected provider and a short real reply before relying on it.
@@ -37,6 +37,7 @@ src/codex_provider_routing/
   rpc.py                         Unix control / native proxy verification client
 docs/windows.md                  Windows install, restart, upgrade, rollback
 docs/linux-wsl.md                Linux / WSL install, user service, restart, rollback
+docs/model-selector.md           Catalog merge, selector entries, reasoning choices, refresh
 skills/codex-app-custom-provider/ Reusable Codex troubleshooting skill
 tests/                           Isolated routing, transport, and file-safety tests
 ```

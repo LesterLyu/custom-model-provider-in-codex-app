@@ -17,6 +17,8 @@ Windows 和 Linux／WSL 的代码及操作说明分开，只有模型路由规�
 
 需要在 **实际运行 app-server 的主机** 上注册 provider，并配置兼容的模型目录。使用独立的模型 ID，然后参考 `examples/routes.example.json` 填写映射。示例模型名称只是占位符。
 
+把模型加入选择器、保留 OpenAI 列表、配置 reasoning 档位，以及更新目录的完整步骤见 [模型选择器教程](docs/model-selector.zh-CN.md)。仓库提供元数据示例和 `tools/merge_catalog.py` 合并工具。
+
 可复用的 skill 位于 `skills/codex-app-custom-provider/`。复制到自己的 Codex skills 目录后，可以使用 `$codex-app-custom-provider` 协助配置和排错。
 
 代码仓库仅包含通用源码、示例、文档和测试。安装生成的环境、运行状态、日志都应留在本机，不要提交到 Git。Linux 运行时保存的原生进程环境可能包含凭据，需要保持目录私有。

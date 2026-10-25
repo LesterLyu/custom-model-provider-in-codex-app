@@ -30,6 +30,8 @@ def is_stdio_server(arguments):
 def native_environment(cli, home):
     env = dict(os.environ, CODEX_APP_RUNTIME_CLI_PATH=str(cli), CODEX_HOME=str(home))
     env.pop('CODEX_CLI_PATH', None)
+    native_bin = str(Path(cli).absolute().parent)
+    env['PATH'] = native_bin + (os.pathsep + env['PATH'] if env.get('PATH') else '')
     return env
 
 
