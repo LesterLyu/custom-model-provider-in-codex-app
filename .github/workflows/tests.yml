@@ -28,6 +28,8 @@ jobs:
       - run: python -m unittest discover -s tests -p test_stdio.py -v
       - run: python -m unittest discover -s tests -p test_routing_core.py -v
       - run: python -m unittest discover -s tests -p test_catalog.py -v
+      - run: python -m unittest discover -s tests -p test_catalog_refresh.py -v
+      - run: python -m unittest discover -s tests -p test_windows_runtime.py -v
       - shell: powershell
         run: |
           $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'

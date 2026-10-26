@@ -23,6 +23,7 @@ HOP_HEADERS = frozenset(("host", "connection", "upgrade", "content-length", "tra
 
 from .routing import Router, validate_routes
 from .startup import claim_endpoint, prepare_directory
+from .catalog_refresh import refresh_catalog
 
 
 def remove_socket(path):
@@ -103,6 +104,7 @@ async def run(args):
             if args.environment:
                 env = json.loads(Path(args.environment).read_text())
             env["CODEX_HOME"] = str(home)
+            await asyncio.to_thread(refresh_catalog, home, args.codex, env)
             native_args[native_args.index("--listen") + 1] = "unix://" + str(upstream)
             remove_socket(upstream)
             native_log = open(home / "app-server-control/app-server.log", "ab", buffering=0)

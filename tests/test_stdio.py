@@ -21,6 +21,19 @@ class Stdio(unittest.TestCase):
                      ['app-server', '--listen', 'unix://'], ['app-server', '--listen=ws://127.0.0.1:8000']):
             self.assertFalse(is_stdio_server(args))
 
+    def test_only_real_stdio_start_refreshes_before_native_start(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            settings = Path(tmp) / 'settings.json'
+            settings.write_text(json.dumps({'home': tmp, 'codex': str(Path(tmp) / 'native-cli'),
+                                            'routes': {'sample': 'local'}}))
+            order = []
+            with patch('sys.argv', ['stdio_router', '--settings', str(settings), '--', 'app-server']), \
+                 patch.dict(os.environ, {'CODEX_HOME': tmp}), \
+                 patch.object(stdio_router, 'refresh_catalog', side_effect=lambda *a: order.append('refresh')), \
+                 patch.object(stdio_router, 'relay', side_effect=lambda *a: order.append('native') or 0):
+                self.assertEqual(stdio_router.main(), 0)
+            self.assertEqual(order, ['refresh', 'native'])
+
     def test_configured_home_reaches_delegated_native_cli(self):
         with tempfile.TemporaryDirectory() as tmp:
             home = str(Path(tmp) / 'custom-home')

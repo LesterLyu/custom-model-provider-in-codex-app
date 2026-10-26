@@ -23,6 +23,8 @@ Read [the platform procedures](references/platforms.md) for the relevant host. P
 
 Windows uses the `windows/` stdio launcher selected through `CODEX_CLI_PATH`. Linux/WSL uses the `src/codex_provider_routing/` Unix WebSocket service. Don't install one in place of the other or replace the native binary. Keep runtime secrets and state outside a public checkout.
 
+On Windows, use a complete private native runtime snapshot, preferably discovered from the installed App package. Never pin or repair individual files in the App-managed hashed relocation cache. Run `windows/update-native.ps1`, then the startup/routing/Code Mode verification. Keep the user override disabled until the real App has been checked; use the process-scoped `start-app.ps1` first.
+
 Prepare and verify before switching the running App. A reconnect/restart can interrupt a turn: use the user's existing authorization and current activity to choose timing. A loaded thread may retain its old provider until the backend restarts.
 
 ## Verify the outcome

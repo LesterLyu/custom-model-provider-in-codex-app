@@ -6,8 +6,8 @@ $current = [Environment]::GetEnvironmentVariable('CODEX_CLI_PATH', 'User')
 if ($current -ne $settings.previous_override -and $current -ne $settings.launcher) {
     throw 'The user override changed since installation; review it first.'
 }
-& $settings.launcher --version
-if ($LASTEXITCODE -ne 0) { throw 'Native CLI delegation failed.' }
+& (Join-Path $Runtime 'venv\Scripts\python.exe') (Join-Path $Runtime 'verify.py') --runtime $Runtime
+if ($LASTEXITCODE -ne 0) { throw 'Routing verification failed. CODEX_CLI_PATH was not changed.' }
 [Environment]::SetEnvironmentVariable('CODEX_CLI_PATH', $settings.launcher, 'User')
 $env:CODEX_CLI_PATH = $settings.launcher
 . (Join-Path $PSScriptRoot 'environment.ps1')

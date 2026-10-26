@@ -9,6 +9,12 @@ import sys
 import threading
 
 from codex_provider_routing.routing import Router
+from codex_provider_routing.catalog_refresh import refresh_catalog
+
+if __package__:
+    from .native_runtime import native_environment, resolve_native
+else:
+    from native_runtime import native_environment, resolve_native
 
 
 def is_stdio_server(arguments):
@@ -25,14 +31,6 @@ def is_stdio_server(arguments):
         if value == '--listen' and (index + 1 == len(tail) or tail[index + 1] != 'stdio://'):
             return False
     return True
-
-
-def native_environment(cli, home):
-    env = dict(os.environ, CODEX_APP_RUNTIME_CLI_PATH=str(cli), CODEX_HOME=str(home))
-    env.pop('CODEX_CLI_PATH', None)
-    native_bin = str(Path(cli).absolute().parent)
-    env['PATH'] = native_bin + (os.pathsep + env['PATH'] if env.get('PATH') else '')
-    return env
 
 
 def relay(cli, arguments, router):
@@ -91,7 +89,10 @@ def main():
     args = parser.parse_args()
     arguments = args.arguments[1:] if args.arguments[:1] == ['--'] else args.arguments
     settings = json.loads(Path(args.settings).read_text(encoding='utf-8-sig'))
-    cli = Path(settings['codex'])
+    try:
+        cli = resolve_native(settings, Path(args.settings).resolve().parent)
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+        parser.error(str(exc))
     # The wrapper must always delegate to the real executable, never back to itself.
     if cli.resolve() == Path(settings.get('launcher', '')).resolve():
         parser.error('Native CLI and routing launcher must differ')
@@ -100,6 +101,7 @@ def main():
         env = native_environment(cli, home)
         return subprocess.call([str(cli), *arguments], env=env)
     router = Router(home, settings['routes'], settings.get('audit'))
+    refresh_catalog(home, cli, native_environment(cli, home))
     return relay(cli, arguments, router)
 
 

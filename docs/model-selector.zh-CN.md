@@ -119,6 +119,8 @@ systemctl --user restart codex-provider-routing.service
 
 ## OpenAI 更新列表怎么办
 
+Windows 和 WSL 均支持[启动时自动刷新](catalog-refresh.md)：保留单独的自定义配置，获取官方最新目录，经原生 CLI 校验后替换；失败沿用旧目录。首次需要启用，并列出所有自定义条目，包括隐藏的 Auto Review。下面的手工合并方式仍然可用。
+
 合并工具不会自动联网更新。获取新鲜的上游／账号目录后重新合并、重启即可；自定义条目单独保存在 `local-models.local.json`，不必反复修改 OpenAI 定义。
 
 注意：启用本地目录覆盖时，`debug models` 显示的是该目录；已有缓存也可能过期。要以账号缓存为新基底，需要在正常 OpenAI 模型发现生效时刷新它，并检查时间、CLI 版本。CLI 升级后，也要重新验证元数据格式。

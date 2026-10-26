@@ -4,14 +4,14 @@ Keep OpenAI as the default while selected custom models use their own provider i
 
 When the App sends a custom model ID without `modelProvider`, the app server can select the default OpenAI provider and report **“The model is not supported when using Codex with a ChatGPT account.”** Registering a provider and adding a model to the catalog are necessary, but do not repair that request. This project supplies a small compatibility router for that case.
 
-[中文说明](README.zh-CN.md) · [Model selector](docs/model-selector.md) · [Windows setup](docs/windows.md) · [Linux / WSL setup](docs/linux-wsl.md) · [Architecture](docs/architecture.md)
+[中文说明](README.zh-CN.md) · [Model selector](docs/model-selector.md) · [Automatic catalog refresh](docs/catalog-refresh.md) · [Windows setup](docs/windows.md) · [Linux / WSL setup](docs/linux-wsl.md) · [Architecture](docs/architecture.md)
 
 ## Platforms
 
 | Host running Codex | Implementation | Tested native CLI |
 | --- | --- | --- |
 | Windows local App | JSONL stdio wrapper, selected through `CODEX_CLI_PATH` | 0.164.0-alpha.11.1 |
-| Linux / WSL remote | Unix WebSocket router with a systemd user service | 0.163.0 |
+| Linux / WSL remote | Unix WebSocket router with a systemd user service | 0.163.0, 0.164.0 |
 
 This is a community workaround for observed versions, not an official Codex feature or a guarantee about future App internals. It does not patch App resources, replace Codex binaries, implement a model API, or bypass account entitlements. You still need a working custom provider endpoint.
 
@@ -32,6 +32,7 @@ Provider registration, model catalogs, and routing have separate jobs. Consult t
 windows/                         Windows installer, launcher, stdio router, verification
 src/codex_provider_routing/
   routing.py                     Shared, platform-independent routing rules
+  catalog_refresh.py             Shared startup refresh with custom-model preservation
   router.py                      Linux / WSL Unix WebSocket transport
   manage.py                      Linux / WSL installer and lifecycle checks
   rpc.py                         Unix control / native proxy verification client
@@ -58,7 +59,7 @@ python -m build
 python tools/verify_native.py --codex /absolute/path/to/codex
 ```
 
-Windows has a separate `windows/verify.py` check. The native checks create temporary homes, preserve defaults, and use an unreachable inference endpoint. The Windows check includes a synthetic local rollout fixture for resume; the Linux check uses ephemeral threads. They do not prove that a particular model server can generate, use tools, or handle automatic approval review; test those separately with the user's authorization.
+Windows has a separate `windows/verify.py` check. Native checks use temporary homes and preserve defaults. Windows checks startup policy, a synthetic resume fixture, and a real Code Mode cell through a scripted localhost Responses endpoint; no external model is called. Linux uses ephemeral threads with an unreachable inference endpoint. These checks do not prove that a particular model server can generate, use tools, or handle automatic approval review; test those separately with the user's authorization.
 
 Source and examples contain no user configuration, credentials, prompts, session IDs, production addresses, native environment snapshots, or binaries. Installation generates private local runtime files. Linux may save the native process environment, including secrets, to preserve authentication: keep that runtime directory private and never upload it. Routing audit is off by default and records only model/provider/method metadata when enabled.
 

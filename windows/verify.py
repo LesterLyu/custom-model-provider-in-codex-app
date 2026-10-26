@@ -10,6 +10,13 @@ import threading
 import uuid
 from datetime import datetime, timezone
 
+if __package__:
+    from .native_runtime import startup_probe
+    from .code_mode_probe import verify_code_mode
+else:
+    from native_runtime import startup_probe
+    from code_mode_probe import verify_code_mode
+
 
 class JsonlClient:
     def __init__(self, command, home):
@@ -86,6 +93,7 @@ def main():
                     {'type': 'input_text', 'text': 'No-inference routing fixture.'}]}}
         ]
         fixture.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+        version = startup_probe([settings['launcher']], home)
         for index in range(2):
             client = JsonlClient([settings['launcher']], home)
             try:
@@ -108,7 +116,9 @@ def main():
                     raise RuntimeError('Config file changed')
             finally:
                 client.close()
-        print('PASS: Windows start/resume, two stdio lifecycles, mapped provider, OpenAI default, no inference.')
+        verify_code_mode(JsonlClient, settings['launcher'], home, model, provider)
+        print('PASS: startup-policy (' + version + '), Windows start/resume, mapped provider, OpenAI default, '
+              'and real Code Mode host execution against localhost. No external inference.')
 
 
 if __name__ == '__main__':

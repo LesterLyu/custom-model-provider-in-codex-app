@@ -1,16 +1,16 @@
 # Platform procedures
 
-The maintained implementation is at https://github.com/LesterLyu/custom-model-provider-in-codex-app. Inspect that checkout and its platform documentation rather than inventing flags or socket layouts. Tested baseline: Windows CLI 0.164.0-alpha.11.1 and Linux/WSL CLI 0.163.0; revalidate after upgrades.
+The maintained implementation is at https://github.com/LesterLyu/custom-model-provider-in-codex-app. Inspect that checkout and its platform documentation rather than inventing flags or socket layouts. Tested baseline: Windows CLI 0.164.0-alpha.11.1 and Linux/WSL CLI 0.163.0 and 0.164.0; revalidate after upgrades.
 
 ## Windows local App
 
 Code: `windows/`. Guide: https://github.com/LesterLyu/custom-model-provider-in-codex-app/blob/main/docs/windows.md
 
 - Verify that the App launches a stdio app server and recognizes `CODEX_CLI_PATH` in the installed version.
-- Install the independent launcher with the real native CLI path and a private model map; first use the installer without activation. Run `windows/verify.py` in its isolated home.
-- Activate the Windows user override, fully exit the App, and explicitly launch using `windows/start-app.ps1` once. Existing Windows processes retain their earlier environment. User environment changes alone don't alter the running App.
+- Install the independent launcher with a private model map, without activation. Prefer installed-App discovery and a complete private native runtime snapshot; never pin the App's hashed relocation cache. An explicit unpackaged source must contain the matching companion tools.
+- Run `windows/verify.py` for startup-policy, routing and actual Code Mode execution against a localhost mock. Then fully exit the App and launch with `windows/start-app.ps1`, whose override applies only to that launch. Keep persistent activation optional until a real App launch has succeeded.
 - The wrapper changes only incoming lifecycle JSONL messages. Other CLI subcommands delegate to the real CLI. Avoid wrapping back to itself.
-- Upgrade the saved native CLI path when necessary, verify, and restart. `windows/rollback.ps1` restores the previous user override; it doesn't modify model config or sessions.
+- Migrate existing installs with `windows/update-native.ps1`, verify, and restart. App-package mode follows the installed package and retains prior private snapshots. `windows/rollback.ps1` restores the previous user override; it doesn't modify model config or sessions.
 
 ## Linux / WSL remote
 
@@ -37,6 +37,7 @@ For selector setup, use https://github.com/LesterLyu/custom-model-provider-in-co
 - Preserve the existing hosted definitions when creating a combined local catalog. Use full, version-compatible metadata; a plain ID list isn't enough.
 - Match `slug` to the API model and route key. Check `display_name`, `visibility`, and truthful supported/default reasoning levels.
 - `tools/merge_catalog.py` combines a fresh base with separate custom definitions and backs up an existing output when `--overwrite` is given. It doesn't fetch upstream data or edit config/auth.
+- For automatic startup refresh, follow `docs/catalog-refresh.md`. Enable separately on each host and explicitly retain every custom ID, including hidden review aliases. Keep generated `provider-catalog/` files private. Verify failures preserve the old catalog and permit startup; restart only when work is idle.
 - Set one top-level `model_catalog_json` absolute path on the actual app-server host. Update the installed runtime map as well; editing an installation input file doesn't update existing routing state.
 - Restart and check `model/list`, then a short authorized inference. Keep generated catalogs private. The repository's example capabilities are placeholders, not a guarantee about any model.
 

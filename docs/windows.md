@@ -27,37 +27,30 @@ Follow the [model selector guide](model-selector.md) ([中文](model-selector.zh
 
 Requirements: Python 3.11+, the native Windows Codex CLI used by the App, and the .NET Framework compiler normally present on supported Windows installations. The Windows runtime uses only the Python standard library.
 
-If `codex` isn't on your shell's PATH, start the App and locate the real running app-server executable:
-
-```powershell
-Get-CimInstance Win32_Process -Filter "Name = 'codex.exe'" |
-  Where-Object { $_.CommandLine -match '\bapp-server\b' } |
-  Select-Object -ExpandProperty ExecutablePath -Unique
-```
-
-Use that native path for `-NativeCodex` and catalog export commands. The routing launcher isn't a substitute for this path.
+By default, installation discovers the installed `OpenAI.Codex` App package and snapshots its complete native runtime into the router's private directory. It does not pin a path under the App-managed `%LOCALAPPDATA%\OpenAI\Codex\bin\<hash>` cache: the App can rebuild or clean those directories.
 
 In PowerShell, from the repository root:
 
 ```powershell
 Copy-Item examples\routes.example.json routes.local.json
 # Edit routes.local.json: use your actual served model IDs and registered provider ID.
-$nativeCodex = (Get-Command codex).Source
-.\windows\install.ps1 -NativeCodex $nativeCodex -Routes .\routes.local.json
+.\windows\install.ps1 -Routes .\routes.local.json
 python .\windows\verify.py --runtime "$env:USERPROFILE\.codex\provider-routing-windows"
 ```
 
-The native executable must be the real `codex.exe`, not this project's wrapper. If `Get-Command` selects another installation, pass the correct absolute path explicitly. Installation refuses to overwrite an existing runtime directory.
+For an unpackaged installation, pass `-NativeCodex 'C:\path\to\runtime\codex.exe'`. Its directory must contain the matching `codex-code-mode-host.exe`, `codex-command-runner.exe`, and `codex-windows-sandbox-setup.exe`; `rg.exe` and the sandbox service are copied when present. A lone executable is insufficient. The executable must be native, not another routing launcher. Installation refuses to overwrite an existing runtime directory.
 
 For a non-default Codex directory, pass `-CodexHome 'C:\path\to\codex-home'`. The wrapper uses that directory for both routing metadata and native CLI configuration; an explicit `CODEX_HOME` in the launching environment takes precedence over the saved setting.
 
-The verification starts two isolated stdio app servers, checks custom-model start/resume and the OpenAI default, and leaves defaults unchanged. It does not perform model inference. After that, activate:
+Verification checks the App's startup-policy JSON, custom-model start/resume, and the OpenAI default. It also executes a harmless real Code Mode cell through a scripted localhost Responses endpoint. No external model is called and no test shell command runs. All chats and configuration used by the probe are isolated.
+
+Start with the process-scoped launcher in the next section. If you also want normal shortcuts to inherit the router, optional persistent activation is:
 
 ```powershell
 .\windows\activate.ps1
 ```
 
-The optional `-Activate` installer switch can also set the user override, but separate verification first is easier to review.
+Both activation and the launch helper run verification before setting an override. The optional `-Activate` installer switch performs persistent activation too.
 
 ## 3. Restart / 重启
 
@@ -67,7 +60,9 @@ The optional `-Activate` installer switch can also set the user override, but se
 .\windows\start-app.ps1
 ```
 
-This explicitly launches with the routing override. The activation script also saves `CODEX_CLI_PATH` as a Windows **user** environment variable and notifies Explorer, so subsequent normal launches can inherit it. An existing App process or terminal keeps its old environment. If an ordinary shortcut still ignores the override, use the explicit launch command or sign out/in to refresh the Windows environment.
+This verifies the runtime and launches with `CODEX_CLI_PATH` only in the new App's environment. It restores the calling shell's earlier value afterward and does not set a Windows user variable. If the App is already running, it stops with an instruction to exit it; it never kills another instance.
+
+Optional `activate.ps1` persists the user override and notifies Explorer. Existing App and shell processes retain their earlier environment. Prefer the process-scoped launcher until the real App has been checked after an upgrade.
 
 不需要重启 Windows，也没有 Windows systemd 服务。必须完整退出 App 再启动，单独关掉一个窗口不一定会结束后台进程。当前会话正在运行时，先结束工作，再重启。
 
@@ -87,6 +82,9 @@ Default runtime: `%USERPROFILE%\.codex\provider-routing-windows\`.
 | --- | --- |
 | `codex-provider-routing.exe` | Launcher compiled locally from this repository |
 | `stdio_router.py` | Windows JSONL routing transport |
+| `native_runtime.py` | Installed-App discovery and complete native snapshots |
+| `native\<digest>\` | Immutable native CLI and companion tools; old snapshots retained |
+| `verify.py`, `code_mode_probe.py` | Startup, routing and local Code Mode checks |
 | `venv\Lib\site-packages\codex_provider_routing\routing.py` | Shared routing rules |
 | `windows.json` | Native CLI path, model map, previous override, local paths |
 
@@ -94,15 +92,17 @@ The App and native CLI binaries remain untouched. These generated files are loca
 
 ## Upgrade / 升级
 
-App or CLI updates can change the native binary's path. Point the runtime to the newly installed real CLI, verify, then restart:
+In App-package mode the wrapper rediscovers the installed package at startup. Changed native files produce a new private snapshot; existing snapshots are never cleaned while another process may use them. To upgrade an existing router's scripts and migrate an old cached CLI path:
 
 ```powershell
-.\windows\update-native.ps1 -NativeCodex 'C:\path\to\new\codex.exe'
+.\windows\update-native.ps1
 python .\windows\verify.py --runtime "$env:USERPROFILE\.codex\provider-routing-windows"
 .\windows\start-app.ps1
 ```
 
-Fully exit the old App before the last command. The wrapper is external, so updating Codex doesn't overwrite it. Compatibility still needs checking: future App versions may change how `CODEX_CLI_PATH` or provider fields work. The installer copies scripts into the runtime, so updating this Git checkout alone does not update an existing runtime.
+Fully exit the App before the last command. `update-native.ps1` backs up `windows.json`, checks native startup, and leaves `CODEX_CLI_PATH` unchanged. Use `-NativeCodex` for an explicit unpackaged source. Updating the Git checkout alone does not update an installed router.
+
+The override remains an external integration. Future App protocols may change, so a real App launch is still needed after the isolated checks. If launch fails, fully exit and use a normal shortcut with the user/process override unset; do not copy individual helpers into an App-managed hash directory or change a hash by hand.
 
 ## Rollback / 撤回
 
@@ -120,3 +120,5 @@ This restores the previous user `CODEX_CLI_PATH` value, notifies Explorer of the
 - New chats work but an old one fails: inspect its saved model and resume request. A loaded wrong-provider thread needs backend restart. Don't bulk-edit session databases.
 - A tool or automatic review fails after the model replies: check the provider's actual request compatibility. Routing alone doesn't add tool or structured-output support.
 - A native CLI upgrade breaks launch: update the real CLI path and run the isolated verification before restarting the App.
+- Missing `codex-code-mode-host.exe`: migrate with `update-native.ps1`; verify the complete private snapshot before enabling the override.
+- "Unable to load organization settings": check the startup-policy probe and actual native version first. This generic dialog can mask a CLI/runtime startup problem. Keep the override disabled while diagnosing.

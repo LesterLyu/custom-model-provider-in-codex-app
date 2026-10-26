@@ -153,6 +153,8 @@ Inspect the custom `slug`, `visibility`, and reasoning fields. The App consumes 
 
 ## Refresh and troubleshoot
 
+For startup refresh on Windows and WSL, see [automatic catalog refresh](catalog-refresh.md). It preserves separate custom definitions, validates with the native CLI, and keeps the previous catalog on failure. The merge tool remains a manual option.
+
 - **OpenAI adds or changes models:** obtain a fresh base, reapply your separate custom definitions with the merge tool, and restart. The tool doesn't fetch or refresh automatically. A copied `models_cache.json` may be stale; check its timestamp/version and refresh with the normal OpenAI catalog active before using it as a new base. `debug models` with the local override active shows that override, not a newly fetched upstream list.
 - **CLI upgrade:** export that CLI's updated bundled snapshot or fetch compatible account metadata, rebuild, and verify. Keep custom definitions separate so you don't hand-edit hosted instructions.
 - **Dynamic catalogs:** use a trusted catalog gateway if you want server-managed refresh. Local `model_catalog_json` takes precedence over remote catalog discovery. A provider-scoped URL alone doesn't construct a combined OpenAI/custom selector. See the [official catalog reference](https://learn.chatgpt.com/docs/model-catalogs).

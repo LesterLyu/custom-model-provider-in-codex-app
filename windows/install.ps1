@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)][string]$NativeCodex,
+    [string]$NativeCodex,
     [Parameter(Mandatory=$true)][string]$Routes,
     [string]$Runtime = (Join-Path $env:USERPROFILE '.codex\provider-routing-windows'),
     [string]$CodexHome = $(if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }),
@@ -8,7 +8,7 @@ param(
     [switch]$Activate
 )
 $ErrorActionPreference = 'Stop'
-$NativeCodex = (Resolve-Path -LiteralPath $NativeCodex).Path
+if ($NativeCodex) { $NativeCodex = (Resolve-Path -LiteralPath $NativeCodex).Path }
 $Routes = (Resolve-Path -LiteralPath $Routes).Path
 $Runtime = [IO.Path]::GetFullPath($Runtime)
 $CodexHome = (Resolve-Path -LiteralPath $CodexHome).Path
@@ -28,10 +28,13 @@ New-Item -ItemType Directory -Path $Runtime | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Python venv creation failed.' }
 $package = Join-Path $Runtime 'venv\Lib\site-packages\codex_provider_routing'
 New-Item -ItemType Directory -Path $package | Out-Null
-foreach ($name in @('__init__.py', 'routing.py')) {
+foreach ($name in @('__init__.py', 'routing.py', 'catalog_refresh.py')) {
     Copy-Item -LiteralPath (Join-Path $repo "src\codex_provider_routing\$name") -Destination $package
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'stdio_router.py') -Destination $Runtime
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'native_runtime.py') -Destination $Runtime
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'verify.py') -Destination $Runtime
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'code_mode_probe.py') -Destination $Runtime
 $launcher = Join-Path $Runtime 'codex-provider-routing.exe'
 & $compiler /nologo /target:exe "/out:$launcher" (Join-Path $PSScriptRoot 'CodexProviderLauncher.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed.' }
@@ -40,6 +43,7 @@ $settings = @{
     previous_override = [Environment]::GetEnvironmentVariable('CODEX_CLI_PATH', 'User')
 }
 $settings | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $Runtime 'windows.json') -Encoding UTF8
+& (Join-Path $PSScriptRoot 'update-native.ps1') -Runtime $Runtime -NativeCodex $NativeCodex
 & $launcher --version
 if ($LASTEXITCODE -ne 0) { throw 'Native CLI delegation failed.' }
 Write-Output "Installed Windows runtime: $Runtime"
