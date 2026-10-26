@@ -126,7 +126,7 @@ def quote_unit(value):
 def render_unit(python, state):
     command = " ".join(quote_unit(x) for x in
                        (python, "-u", "-m", "codex_provider_routing.manage", "serve", "--state", state))
-    return ("[Unit]\nDescription=Codex custom model provider routing\nAfter=network.target\n\n"
+    return ("[Unit]\nDescription=Codex custom model provider routing\nAfter=network.target\nStartLimitIntervalSec=0\n\n"
             "[Service]\nType=simple\nExecStart=" + command + "\n"
             "Restart=on-failure\nRestartSec=3\nTimeoutStopSec=30\nKillMode=control-group\nUMask=0077\n\n"
             "[Install]\nWantedBy=default.target\n")

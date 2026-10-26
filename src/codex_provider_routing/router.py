@@ -22,6 +22,7 @@ HOP_HEADERS = frozenset(("host", "connection", "upgrade", "content-length", "tra
 
 
 from .routing import Router, validate_routes
+from .startup import claim_endpoint, prepare_directory
 
 
 def remove_socket(path):
@@ -84,6 +85,7 @@ async def run(args):
     ownership = None
     server = None
     try:
+        prepare_directory(listen)
         if args.ownership_lock:
             fd = os.open(args.ownership_lock, os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
             if os.fstat(fd).st_uid != os.getuid():
@@ -91,18 +93,21 @@ async def run(args):
                 raise RuntimeError("Non-owned public endpoint lock")
             ownership = os.fdopen(fd, 'a')
             fcntl.flock(ownership, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        native_state = getattr(args, "native", None)
+        native_args = list(native_state["arguments"]) if native_state else ["app-server", "--listen", "unix://"]
+        native_cwd = native_state["cwd"] if native_state else str(home.parent)
+        if args.codex and args.ownership_lock:
+            await claim_endpoint(listen, home, args.codex, native_args, native_cwd, stop)
         if args.codex:
             env = dict(os.environ)
             if args.environment:
                 env = json.loads(Path(args.environment).read_text())
             env["CODEX_HOME"] = str(home)
-            native_state = getattr(args, "native", None)
-            native_args = list(native_state["arguments"]) if native_state else ["app-server", "--listen", "unix://"]
             native_args[native_args.index("--listen") + 1] = "unix://" + str(upstream)
             remove_socket(upstream)
             native_log = open(home / "app-server-control/app-server.log", "ab", buffering=0)
             native = await asyncio.create_subprocess_exec(args.codex, *native_args, env=env,
-                cwd=native_state["cwd"] if native_state else str(home.parent),
+                cwd=native_cwd,
                 stdin=asyncio.subprocess.DEVNULL, stdout=native_log, stderr=native_log)
             for _ in range(200):
                 if native.returncode is not None:

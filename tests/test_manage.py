@@ -46,6 +46,7 @@ class Management(unittest.TestCase):
         self.assertIn('"/example home/venv/bin/python"', unit)
         self.assertIn('100%%', unit)
         self.assertIn('KillMode=control-group', unit)
+        self.assertIn('StartLimitIntervalSec=0', unit)
         self.assertIn('UMask=0077', unit)
         self.assertEqual(quote_unit('$HOME'), '"$$HOME"')
         with self.assertRaises(ValueError):

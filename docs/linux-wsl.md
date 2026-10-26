@@ -58,6 +58,8 @@ If your CLI lives elsewhere, substitute its actual path. The installer saves the
 
 Reconnecting the App still uses the normal SSH/proxy entry. No SSH command wrapper or CLI binary patch is needed: the router owns the native public socket.
 
+On reboot the service recreates its private directory under `/tmp` and holds the native startup lock before launching its backend. If the App started a native fallback first, the service verifies its user, executable, launch arguments, working directory and Codex home. It waits for loaded work to finish, then gracefully stops that exact idle process and restores routing with the saved environment. Unknown listeners and unreadable thread status are preserved; they are never treated as idle. A Linux pidfd prevents signaling a recycled PID. Transient startup failures keep retrying rather than hitting systemd's short start limit.
+
 ## User service commands / 用户服务命令
 
 **Restart / 重启** — finish active turns and disconnect the App first:
@@ -127,6 +129,8 @@ Replace the example model ID with an installed mapping. Both commands first conf
 After updating the native CLI, disconnect the App, restart the user service, and rerun `doctor`/`verify`. A stable native CLI symlink lets the service use the updated binary after restart. If its path changes, inspect the private installation state and update deliberately. Schema compatibility alone doesn't establish compatibility with future native socket or App changes.
 
 To update the router package itself, reinstall the reviewed checkout into the dedicated venv, disconnect the App, restart, and verify. Don't overwrite an unrelated unit or assume an older manually installed script uses this package.
+
+Units generated before startup recovery was added also need `StartLimitIntervalSec=0` in their `[Unit]` section. Apply this to the existing owned unit (or a user unit drop-in), run `systemctl --user daemon-reload`, then restart when loaded work is idle. Updating the Python package alone does not regenerate an existing service unit.
 
 ## Rollback / 撤回
 
