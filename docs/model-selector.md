@@ -21,11 +21,42 @@ In PowerShell, use `Copy-Item` instead of `cp` if preferred. Edit the copy for y
 | `supported_reasoning_levels` | Reasoning choices the model/provider actually accepts |
 | `default_reasoning_level` | Default choice, included in the supported list |
 | `context_window`, `max_context_window` | Actual context limits, not a way to enlarge the backend |
+| `tool_mode` | Tool exposure: `direct`, `code_mode`, or `code_mode_only`; see below |
 | `input_modalities`, tool-related fields | Actual image/tool support |
 
 The example has a **placeholder ID**, text input, a 32K context, and three example reasoning choices. Replace those capabilities before using it for real inference. Its short instructions are an example too; use provider-tested instructions. It doesn't enable hosted search or automatic approval review.
 
 Keep custom IDs distinct from hosted IDs. `slug`, inference `model`, and route-map key must match exactly.
+
+### Tool mode: JavaScript orchestration and direct tools
+
+This setup uses **`"tool_mode": "code_mode"` for the custom model** while checking provider compatibility. It supplies the JavaScript `exec` / `wait` entry points and retains direct tools, which makes troubleshooting easier than starting with `code_mode_only`. Preserve hosted model entries and their existing tool modes.
+
+Set the field **inside the custom model's JSON object**, not as a top-level setting in `config.toml`. For example, edit the entry copied to `local-models.local.json`:
+
+```json
+{
+  "slug": "example-local-model",
+  "tool_mode": "code_mode"
+}
+```
+
+This is a fragment of the full model definition, not a complete catalog. The repository's metadata example includes this field.
+
+| Value | Model-visible tool surface |
+| --- | --- |
+| `"direct"` | Normal tools are exposed directly, such as `exec_command` and `apply_patch`. |
+| `"code_mode"` | JavaScript `exec` / `wait` plus direct tools; nested tools are callable through `tools.*`. |
+| `"code_mode_only"` | Most tools are accessed through JavaScript; some special tools can remain directly exposed. |
+| `null` or omitted | No explicit override; the effective mode depends on model defaults and feature settings. |
+
+The table was checked against **Codex CLI 0.164.0** using an isolated local mock Responses endpoint. It describes the request's tool definitions, not proof that every custom model can reliably use them. Code Mode also needs a working host/runtime and compatible tool-call handling by the provider. Recheck after CLI upgrades.
+
+Apply the choice on **both Windows and Linux / WSL**, each in the catalog referenced by that host's `model_catalog_json`. If a selected profile references another catalog, update that custom entry too. Keep the setting in the separate custom definitions so the next catalog merge preserves it; don't rely on editing the managed `models_cache.json`.
+
+Back up existing catalogs first. After changing them, fully exit and relaunch the Windows App; for WSL, disconnect idle chats, restart `codex-provider-routing.service`, and reconnect. Updating the CLI on disk does not replace an already running app-server.
+
+Code Mode changes how tools are called. Browser and MCP tools still need to be installed, enabled and reachable on the actual host; it does not connect a WSL chat to the Windows built-in browser automatically. Inside JavaScript, returning only selected output can reduce what reaches the model, but does not guarantee that raw results are absent from execution logs.
 
 ## 2. Keep the OpenAI entries when building the catalog
 

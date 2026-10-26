@@ -11,6 +11,7 @@
         {"effort": "high", "description": "Higher reasoning effort"}
       ],
       "shell_type": "unified_exec",
+      "tool_mode": "code_mode",
       "visibility": "list",
       "supported_in_api": true,
       "priority": 100,

@@ -17,6 +17,36 @@
 
 示例只是占位模型，默认写了文本输入、32K 上下文、low／medium／high 三档。不要直接当成你的模型规格。若服务端已提供完整的 Codex 模型目录，优先使用服务端定义。
 
+### 工具模式：使用 `code_mode`
+
+本配置为自定义模型选择 **`"tool_mode": "code_mode"`**：提供 JavaScript 的 `exec`／`wait` 编排入口，同时保留直接工具，便于检查模型和服务端的兼容性。保留 OpenAI 条目原来的模式。
+
+这个字段写在**模型目录 JSON 的具体模型对象中**，不是 `config.toml` 的顶层设置。例如在 `local-models.local.json` 的自定义条目中添加：
+
+```json
+{
+  "slug": "example-local-model",
+  "tool_mode": "code_mode"
+}
+```
+
+以上只是完整模型定义的片段；仓库的元数据示例已包含此字段。
+
+| 值 | 提供给模型的工具 |
+| --- | --- |
+| `"direct"` | 直接提供普通工具，例如 `exec_command`、`apply_patch`。 |
+| `"code_mode"` | 提供 JS 编排入口，也保留直接工具；JS 中通过 `tools.*` 调用内部工具。 |
+| `"code_mode_only"` | 大部分工具经 JS 调用；部分特殊工具仍可能直接提供。 |
+| `null` 或省略 | 不显式覆盖；实际模式取决于模型默认值及 feature 设置。 |
+
+这些工具定义已在 **Codex CLI 0.164.0** 上通过隔离的本地模拟 Responses 接口核对，没有调用真实模型。这只能确认客户端提供什么工具，不能证明任意模型都能正确使用。Code Mode 还需要可用的 host／runtime，以及后端兼容的工具调用格式；CLI 升级后应重新验证。
+
+**Windows 和 WSL 分别配置**：修改各自主配置 `model_catalog_json` 指向的目录。若 profile 指向另一个目录，也要更新其中对应的自定义条目。将此字段保存在单独的自定义定义中，后续重新合并目录时才能保留；不要依赖直接修改托管的 `models_cache.json`。
+
+修改前先备份。Windows 完整退出并重新启动 App；WSL 在会话空闲时断开 App，执行 `systemctl --user restart codex-provider-routing.service` 后重新连接。只更新磁盘上的 CLI，不会替换已经运行的 app-server。
+
+这个模式只改变工具调用方式。浏览器、MCP 仍须在实际主机上安装、启用并连通；它不会自动把 Windows 内置浏览器接给 WSL。在 JS 中只返回筛选后的内容，可以减少进入模型上下文的输出，但不代表执行日志完全不记录原始结果。
+
 ## 2. 合并 OpenAI 列表，避免只剩本地模型
 
 保留当前 OpenAI 模型定义，再追加本地模型。仓库提供 `tools/merge_catalog.py`，不会修改原有模型条目、默认配置或认证；不会把缓存顶层的身份字段复制到结果中。
